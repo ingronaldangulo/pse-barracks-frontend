@@ -4,8 +4,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import Cookies from 'universal-cookie';
 import { isMobile } from "react-device-detect";
+import { Button } from 'react-bootstrap';
 
 const baseUrl='http://localhost:3100/api/users/login';
+const baseSecurityUrl='http://localhost:3100/api/security';
 const cookies = new Cookies();
 
 class Login extends Component {
@@ -23,7 +25,7 @@ class Login extends Component {
                 [e.target.name]: e.target.value
             }
         });
-        console.log(this.state.form);
+        //console.log(this.state.form);
     }
 
     iniciarSesion=async()=>{
@@ -37,10 +39,10 @@ class Login extends Component {
         })
         .then(response=>{
 
-            if(response.code == 200){
+            if(response.code === 200){
                 cookies.set('user-token', response.success, {path: "/"});
                 localStorage.setItem("user-token", response.success);
-                //window.location.href="./home";
+                window.location.href="./home";
             }else {
                 alert('El usuario y/o  contraseña no son validos.');
             }
@@ -50,15 +52,39 @@ class Login extends Component {
         })
 
     }
-
+    
     componentDidMount() {
-        if(cookies.get('user-token')){
-            window.location.href="./home";
+
+        if(localStorage.getItem('user-token')){
+            //Validation of session            
+            axios.get(baseSecurityUrl, {
+                headers: {
+                    'user-token': localStorage.getItem('user-token')
+                    }
+            })
+            .then(response=>{
+                console.log('VALLLL:' + JSON.stringify(response.data));
+                return response.data;
+            })
+            .then(response=>{
+                if(response.session === true){
+                    window.location.href="./home";
+                }else {
+                    localStorage.removeItem('user-token');
+                    window.location.href="./";
+                }
+            })
+            .catch(error=>{
+                console.log(error);
+            })
+            
         }
     }
     
 
     render() {
+
+        //console.log('VALIDDATE COOKIE');
         return (
     <div className="containerPrincipal">
         <div className="containerSecundario">
@@ -82,6 +108,13 @@ class Login extends Component {
             />
             <br />
             <button className="btn btn-primary" onClick={()=> this.iniciarSesion()}>Iniciar Sesión</button>
+            <br/>
+
+            <div class="container signin">
+                <p>Si no tiene una cuenta <a href="register">Registrate</a>.</p>
+            </div>
+
+
           </div>
         </div>
       </div>
